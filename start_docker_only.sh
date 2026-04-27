@@ -40,6 +40,7 @@ APP_HOST=0.0.0.0
 APP_PORT=8080
 HOST_APP_PORT=$AMAZON_HTTP_PORT
 APP_NAME=team1c-amazon
+SESSION_SECRET=dev-mini-amazon-session-secret
 DATABASE_URL=postgresql+psycopg://postgres:postgres@db:5432/amazon
 SYNC_DATABASE_URL=postgresql+psycopg://postgres:postgres@db:5432/amazon
 AMAZON_HOST=web
@@ -65,6 +66,9 @@ wait_for_healthz() {
     fi
     sleep 2
   done
+  echo "ERROR: Timed out waiting for $url"
+  echo "Last response:"
+  curl -i "$url" || true
   return 1
 }
 
@@ -117,7 +121,18 @@ compose down -v
 compose up -d --build
 
 echo "==> Waiting for Amazon healthz"
-wait_for_healthz "http://127.0.0.1:${AMAZON_HTTP_PORT}/healthz" 60
+if ! wait_for_healthz "http://127.0.0.1:${AMAZON_HTTP_PORT}/healthz" 60; then
+  echo
+  echo "Amazon container status:"
+  compose ps || true
+  echo
+  echo "Amazon web logs:"
+  compose logs --tail 160 web || true
+  echo
+  echo "Amazon db logs:"
+  compose logs --tail 80 db || true
+  exit 1
+fi
 
 echo "==> Ensuring UPS demo login user exists"
 cd "$UPS_DIR"

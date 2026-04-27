@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from starlette.responses import Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
@@ -28,7 +29,7 @@ def cart_page(
     request: Request,
     message: Optional[str] = None,
     db: Session = Depends(get_db),
-) -> HTMLResponse | RedirectResponse:
+) -> Response:
     customer = current_customer(request, db)
     if customer is None:
         return _login_redirect("/cart")

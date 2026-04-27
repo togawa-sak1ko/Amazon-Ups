@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mini Amazon</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="topbar">
+        <a class="brand" href="/" aria-label="Mini Amazon home">
+          <span class="brand-name">amazon</span><span class="brand-smile"></span>
+        </a>
+        <form method="get" action="/" class="global-search">
+          <select aria-label="Search department">
+            <option>All</option>
+            <option>Devices</option>
+            <option>Office</option>
+          </select>
+          <input type="text" name="q" value="{{ search }}" placeholder="Search Mini Amazon">
+          <button type="submit" aria-label="Search">Search</button>
+        </form>
+        <form class="track-form" data-track-form>
+          <label for="track-order">Track order</label>
+          <div>
+            <input id="track-order" type="number" min="1" placeholder="#1001" data-track-input>
+            <button type="submit">Go</button>
+          </div>
+        </form>
+      </div>
+      <nav class="nav-strip" aria-label="Primary">
+        <a href="#catalog">Today's picks</a>
+        <a href="#checkout">Checkout</a>
+        <a href="#orders">Orders</a>
+        <a href="#fulfillment">Fulfillment center</a>
+        <span>World + UPS live simulation</span>
+      </nav>
+    </header>
+
+    <main>
+      <section class="storefront">
+        <div class="storefront-copy">
+          <p class="eyebrow">ERSS Team 1c Mini Amazon</p>
+          <h1>Shop, ship, and watch the package move through the simulated world.</h1>
+          <p>
+            Place a real project order, hand it to UPS, pack it through the world simulator,
+            redirect eligible destinations, and follow every fulfillment state from one storefront.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#catalog">Shop catalog</a>
+            <a class="button button-secondary" href="#orders">View orders</a>
+          </div>
+        </div>
+        <aside class="delivery-card" id="fulfillment">
+          <div class="truck-scene" aria-hidden="true">
+            <span class="warehouse-box"></span>
+            <span class="route-line"></span>
+            <span class="delivery-truck"></span>
+            <span class="home-pin"></span>
+          </div>
+          <h2>Fulfillment pulse</h2>
+          <div class="metric-grid">
+            <article>
+              <strong>{{ total_orders }}</strong>
+              <span>Total orders</span>
+            </article>
+            <article>
+              <strong>{{ active_orders }}</strong>
+              <span>In progress</span>
+            </article>
+            <article>
+              <strong>{{ delivered_orders }}</strong>
+              <span>Delivered</span>
+            </article>
+          </div>
+        </aside>
+      </section>
+
+      <section class="content-grid">
+        <div class="main-column">
+          <section class="section-head" id="catalog">
+            <div>
+              <p class="eyebrow">Catalog</p>
+              <h2>Recommended for your warehouse</h2>
+            </div>
+            <span>{{ catalog|length }} product{{ "" if catalog|length == 1 else "s" }} visible</span>
+          </section>
+
+          <section class="product-grid" aria-label="Product catalog">
+            {% for item in catalog %}
+              <article class="product-card">
+                <div class="product-art product-art-{{ loop.index0 % 5 }}" aria-hidden="true">
+                  <span>{{ item.product_name[:2] }}</span>
+                </div>
+                <div class="product-body">
+                  <h3>{{ item.product_name }}</h3>
+                  <p>Fast simulated fulfillment from Warehouse {{ item.warehouse_id }}.</p>
+                  <div class="rating" aria-label="4.8 out of 5 stars">
+                    <span></span><span></span><span></span><span></span><span></span>
+                    <small>4.8</small>
+                  </div>
+                  <div class="product-meta">
+                    <strong>${{ 19 + loop.index0 * 12 }}.99</strong>
+                    <span>{{ item.quantity }} in stock</span>
+                  </div>
+                </div>
+                <button class="select-product" type="button" data-product="{{ item.product_name }}">Add to checkout</button>
+              </article>
+            {% else %}
+              <div class="empty-state">
+                <h3>No products matched your search.</h3>
+                <p>Try a broader keyword or clear the search field.</p>
+              </div>
+            {% endfor %}
+          </section>
+        </div>
+
+        <aside class="checkout-panel" id="checkout">
+          <div class="panel-heading">
+            <p class="eyebrow">Checkout</p>
+            <h2>Create project order</h2>
+          </div>
+          <form method="post" action="/orders" class="order-form" id="order-form">
+            <label>
+              <span>Product</span>
+              <input type="text" name="product_name" value="{{ catalog[0].product_name if catalog else 'Widget' }}" list="catalog-products" required data-product-input>
+            </label>
+            <label>
+              <span>Quantity</span>
+              <input type="number" name="quantity" value="1" min="1" required>
+            </label>
+            <div class="coordinate-grid">
+              <label>
+                <span>Destination X</span>
+                <input type="number" name="dest_x" value="5" required>
+              </label>
+              <label>
+                <span>Destination Y</span>
+                <input type="number" name="dest_y" value="8" required>
+              </label>
+            </div>
+            <label>
+              <span>UPS Username</span>
+              <input type="text" name="ups_username" placeholder="Optional account link">
+            </label>
+            <button type="submit" class="checkout-button">Place your order</button>
+          </form>
+          <datalist id="catalog-products">
+            {% for item in catalog %}
+              <option value="{{ item.product_name }}"></option>
+            {% endfor %}
+          </datalist>
+          <div class="checkout-note">
+            <strong>What happens next</strong>
+            <p>Amazon buys inventory, packs the product, requests UPS pickup, loads the truck, then accepts delivery callbacks.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="orders-section" id="orders">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Orders</p>
+            <h2>Recent activity</h2>
+          </div>
+        </div>
+        <div class="orders-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Package</th>
+                <th>Product</th>
+                <th>Status</th>
+                <th>Destination</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in recent_orders %}
+                <tr>
+                  <td><a href="/orders/{{ order.order_id }}">#{{ order.order_id }}</a></td>
+                  <td>{{ order.package_id }}</td>
+                  <td>{{ order.product_name }}</td>
+                  <td><span class="status-pill status-{{ order.status }}">{{ status_labels.get(order.status, order.status) }}</span></td>
+                  <td>({{ order.dest_x }}, {{ order.dest_y }})</td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="5" class="empty-row">No orders yet. Create one from checkout and it will appear here.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <strong>Mini Amazon</strong>
+      <span>Amazon-side web app for catalog ordering, UPS handoff, destination redirect, and world simulator fulfillment.</span>
+    </footer>
+
+    <script>
+      (function () {
+        const productInput = document.querySelector("[data-product-input]");
+        document.querySelectorAll("[data-product]").forEach((button) => {
+          button.addEventListener("click", () => {
+            if (productInput) {
+              productInput.value = button.dataset.product;
+              document.querySelector("#checkout").scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          });
+        });
+
+        const trackForm = document.querySelector("[data-track-form]");
+        const trackInput = document.querySelector("[data-track-input]");
+        if (trackForm && trackInput) {
+          trackForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const value = trackInput.value.trim();
+            if (value) {
+              window.location.href = "/orders/" + encodeURIComponent(value);
+            }
+          });
+        }
+      }());
+    </script>
+  </body>
+</html>

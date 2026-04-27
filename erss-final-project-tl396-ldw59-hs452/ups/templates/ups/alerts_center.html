@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="hero-shell">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Alerts</div>
+        <h1>Track shipment events and support activity in one feed.</h1>
+        <p>
+          The alerts center now aggregates recent shipment events and account-linked support updates so
+          the portal exposes a real operational timeline rather than a placeholder notice board.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#alert-feed">Open feed</a>
+          <a class="button button-secondary" href="{% url 'ups:support-center' %}">Create support request</a>
+        </div>
+        <div class="hero-facts">
+          <article>
+            <strong>{{ counts.total }}</strong>
+            <span class="muted">Feed entries</span>
+          </article>
+          <article>
+            <strong>{{ counts.shipment }}</strong>
+            <span class="muted">Shipment event alerts</span>
+          </article>
+          <article>
+            <strong>{{ counts.support }}</strong>
+            <span class="muted">Support follow-up notices</span>
+          </article>
+          <article>
+            <strong>{{ counts.exceptions }}</strong>
+            <span class="muted">Shipment exceptions</span>
+          </article>
+        </div>
+      </div>
+
+      <aside class="hero-panel">
+        <div class="track-tabs">
+          <a class="active" href="#alert-feed">Events</a>
+          <a href="#shipment-alerts">Shipments</a>
+          <a href="#support-alerts">Support</a>
+        </div>
+        <div class="tracking-module">
+          <h2>Alert summary</h2>
+          <p>Use this center to spot delivery changes, loading milestones, and support queue movement.</p>
+          <div class="label-list">
+            <div class="label-row">
+              <strong>Recent shipments</strong>
+              <span>{{ recent_shipments|length }}</span>
+            </div>
+            <div class="label-row">
+              <strong>Recent tickets</strong>
+              <span>{{ recent_tickets|length }}</span>
+            </div>
+            <div class="label-row">
+              <strong>Exceptions</strong>
+              <span>{{ counts.exceptions }}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="panel" id="alert-feed" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Alert feed</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Latest updates</h1>
+        <p class="muted">Combined shipment and support notices ordered by most recent activity.</p>
+      </div>
+    </div>
+    <div class="timeline">
+      {% for item in alert_feed %}
+        <div class="timeline-item">
+          <div class="page-head" style="margin-bottom: 0.35rem;">
+            <div>
+              <strong>{{ item.title }}</strong>
+              <p class="muted" style="margin: 0.35rem 0 0;">{{ item.message }}</p>
+            </div>
+            <span class="status-chip {% if item.kind == 'shipment' %}ok{% endif %}">{{ item.kind|title }}</span>
+          </div>
+          <div class="muted">{{ item.created_at }}</div>
+        </div>
+      {% empty %}
+        <div class="empty-state">No alerts are available yet.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section-grid two-up">
+    <article class="panel" id="shipment-alerts">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Shipment slice</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Recent packages</h1>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tracking</th>
+            <th>Status</th>
+            <th>Truck</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for shipment in recent_shipments %}
+            <tr>
+              <td><a href="{% url 'ups:tracking-result' shipment.tracking_number %}">{{ shipment.tracking_number }}</a></td>
+              <td>{{ shipment.get_status_display }}</td>
+              <td>{% if shipment.assigned_truck %}{{ shipment.assigned_truck.truck_id }}{% else %}<span class="muted">Pending</span>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3" class="empty-state">No shipments available.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </article>
+
+    <article class="panel" id="support-alerts">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Support slice</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Recent ticket activity</h1>
+        </div>
+      </div>
+      <div class="news-list">
+        {% for ticket in recent_tickets %}
+          <div class="news-item">
+            <h3>{{ ticket.subject }}</h3>
+            <p class="muted">{{ ticket.get_category_display }} · {{ ticket.get_status_display }}</p>
+          </div>
+        {% empty %}
+          <div class="news-item">
+            <h3>No support activity</h3>
+            <p class="muted">Support-ticket changes will appear here for signed-in users.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% endblock %}

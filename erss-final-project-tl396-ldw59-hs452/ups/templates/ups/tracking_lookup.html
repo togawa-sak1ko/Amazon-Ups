@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Track a Package | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="panel" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">How Can We Help You?</div>
+        <h1 style="font-size:2.15rem; margin-bottom:0.35rem;">Customer tools at a glance</h1>
+        <p>Start with the most common shipping tasks without hunting through the portal.</p>
+      </div>
+    </div>
+    <div class="utility-tiles">
+      <article class="utility-tile">
+        <div class="tile-mark">TR</div>
+        <h3>Track</h3>
+        <p class="muted">Look up package status from the public tracking flow.</p>
+        <a class="tile-link" href="#track-module">Track a package</a>
+      </article>
+      <article class="utility-tile">
+        <div class="tile-mark">QT</div>
+        <h3>Quote</h3>
+        <p class="muted">Estimate rates and transit times, then save delivery scenarios into the portal.</p>
+        <a class="tile-link" href="{% url 'ups:quote-overview' %}">Estimate time and cost</a>
+      </article>
+      <article class="utility-tile">
+        <div class="tile-mark">SH</div>
+        <h3>Ship</h3>
+        <p class="muted">Your Amazon-to-UPS intake endpoints feed a live shipping control center.</p>
+        <a class="tile-link" href="{% url 'ups:shipping-overview' %}">Open shipping tools</a>
+      </article>
+      <article class="utility-tile">
+        <div class="tile-mark">AC</div>
+        <h3>Account</h3>
+        <p class="muted">Authenticated users can inspect owned packages and request redirects.</p>
+        {% if request.user.is_authenticated %}
+          <a class="tile-link" href="{% url 'ups:dashboard' %}">Go to dashboard</a>
+        {% else %}
+          <a class="tile-link" href="{% url 'ups:signup' %}">Create account</a>
+        {% endif %}
+      </article>
+    </div>
+  </section>
+
+  <section class="callout" style="margin-bottom: 1rem;">
+    <div>
+      <strong>Most users should start with the package ID from Amazon.</strong>
+      <span class="muted">If your order is linked to a UPS username, signing in unlocks package history and redirect controls.</span>
+    </div>
+    <div class="callout-actions">
+      <a class="button button-primary" href="#track-module">Track package</a>
+      {% if request.user.is_authenticated %}
+        <a class="button button-secondary" href="{% url 'ups:shipment-list' %}">Open my shipments</a>
+      {% else %}
+        <a class="button button-secondary" href="{% url 'ups:signup' %}">Create account</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="hero-shell">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Tracking</div>
+        <h1>Track, review, and manage shipments in a UPS-style portal.</h1>
+        <p>
+          Enter a package identifier, check delivery progress, and move into the authenticated workspace
+          when you need account-specific controls. The page keeps the carrier-style layout, but the flow
+          is cleaner and more direct for first-time users.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#track-module">Track now</a>
+          {% if request.user.is_authenticated %}
+            <a class="button button-secondary" href="{% url 'ups:dashboard' %}">Open dashboard</a>
+          {% else %}
+            <a class="button button-secondary" href="{% url 'ups:signup' %}">Create account</a>
+          {% endif %}
+        </div>
+        <div class="hero-facts">
+          <article>
+            <strong>Live statuses</strong>
+            <span class="muted">Created, loading, out for delivery, delivered.</span>
+          </article>
+          <article>
+            <strong>Account view</strong>
+            <span class="muted">Owners can review package details and shipment history.</span>
+          </article>
+          <article>
+            <strong>Redirect support</strong>
+            <span class="muted">Destination changes are allowed before final delivery begins.</span>
+          </article>
+        </div>
+      </div>
+
+      <aside class="hero-panel" id="track-module">
+        <div class="track-tabs">
+          <a class="active" href="#track-module">Track</a>
+          <a href="#recent-shipments">History</a>
+          {% if request.user.is_authenticated %}
+            <a href="{% url 'ups:dashboard' %}">Account</a>
+          {% else %}
+            <a href="{% url 'login' %}">Account</a>
+          {% endif %}
+        </div>
+        <div class="tracking-module">
+          <h2>Track by Package ID</h2>
+          <p>Enter the package ID Amazon gave the customer, or an existing UPS tracking value.</p>
+          <form method="post" action="{% url 'ups:tracking-lookup' %}" class="stack-form">
+            {% csrf_token %}
+            <div>
+              <label for="{{ form.tracking_number.id_for_label }}">Package ID or tracking number</label>
+              {{ form.tracking_number }}
+              <div class="helper-note">Examples: `123456789`, `555`, or a legacy `UPS-...` identifier.</div>
+            </div>
+            <button class="button-gold" type="submit">Track</button>
+          </form>
+          <div class="helper-note">If the ID is invalid or missing, the portal will keep you here and show an alert instead of opening a new page.</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="panel" id="recommended-tools" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Solutions for Everyone</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Recommended tools and account paths</h1>
+        <p>Structured to mirror the official UPS homepage’s segmented recommendation area.</p>
+      </div>
+    </div>
+    <div class="tab-strip">
+      <a class="active" href="#recommended-tools">Recommended</a>
+      <a href="#business-tools">Business</a>
+      <a href="#personal-tools">Personal</a>
+    </div>
+    <div class="quick-links">
+      <article class="quick-link">
+        <h3>Access advanced tracking</h3>
+        <p class="muted">Log in and see all owned deliveries in one place, with status and redirect access.</p>
+        {% if request.user.is_authenticated %}
+          <a class="inline-link" href="{% url 'ups:dashboard' %}">Go to dashboard</a>
+        {% else %}
+          <a class="inline-link" href="{% url 'login' %}">Log in</a>
+        {% endif %}
+      </article>
+      <article class="quick-link">
+        <h3>Take control of deliveries</h3>
+        <p class="muted">Review whether a package can still be rerouted before it goes out for delivery.</p>
+        <a class="inline-link" href="#track-module">Track a shipment</a>
+      </article>
+      <article class="quick-link">
+        <h3>Go beyond tracking</h3>
+        <p class="muted">This starter is already connected to account views, API intake, and the UPS world-daemon split.</p>
+        <a class="inline-link" href="{% url 'ups:shipment-list' %}">See shipment list</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="quick-links" id="personal-tools">
+    <article class="quick-link">
+      <h3>Shipment visibility</h3>
+      <p class="muted">See the same shipment statuses the project spec expects users to understand quickly.</p>
+    </article>
+    <article class="quick-link">
+      <h3>Account workflows</h3>
+      <p class="muted">Authenticated users can open owned shipments, inspect contents, and request redirects.</p>
+    </article>
+    <article class="quick-link">
+      <h3>IG-ready backend</h3>
+      <p class="muted">The UI sits on top of the UPS models, command queue, and daemon split needed for world integration.</p>
+    </article>
+  </section>
+
+  <section class="panel" id="recent-shipments">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Recent activity</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Latest tracked shipments</h1>
+        <p class="muted">Recent packages with quick links into tracking details.</p>
+      </div>
+      <span class="status-chip">{{ recent_shipments|length }} shown</span>
+    </div>
+    <div class="table-shell">
+      <table class="tracking-table">
+        <thead>
+          <tr>
+            <th>Tracking</th>
+            <th>Status</th>
+            <th>Destination</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for shipment in recent_shipments %}
+            <tr>
+              <td><a href="{% url 'ups:tracking-result' shipment.tracking_number %}">{{ shipment.tracking_number }}</a></td>
+              <td><span class="status-chip {% if shipment.status == 'delivered' %}ok{% endif %}">{{ shipment.get_status_display }}</span></td>
+              <td>({{ shipment.destination_x }}, {{ shipment.destination_y }})</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3" class="empty-state">No shipments have been recorded yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section-grid two-up" style="margin-top: 1rem;">
+    <article class="panel" id="business-tools">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Tools for every step</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Shipping and tracking tools</h1>
+          <p>Adapted from the official UPS “tools” section for your project’s actual workflows.</p>
+        </div>
+      </div>
+      <div class="quick-links" style="margin-bottom:0;">
+        <article class="quick-link">
+          <h3>Tracking lookup</h3>
+          <p class="muted">Public status checks for quick package visibility.</p>
+          <a class="inline-link" href="#track-module">Track now</a>
+        </article>
+        <article class="quick-link">
+          <h3>Account shipment center</h3>
+          <p class="muted">Review owned shipments, contents, and redirect eligibility.</p>
+          <a class="inline-link" href="{% url 'ups:shipment-list' %}">Open account view</a>
+        </article>
+        <article class="quick-link">
+          <h3>Shipment intake API</h3>
+          <p class="muted">IG-facing JSON endpoints register shipments and feed the UPS workflow.</p>
+          <a class="inline-link" href="{% url 'ups:shipping-overview' %}">Open shipping tools</a>
+        </article>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Important Updates</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Project-state notices</h1>
+        </div>
+      </div>
+      <div class="news-list">
+        <div class="news-item">
+          <h3>Redirect protection is active</h3>
+          <p class="muted">Users can redirect a package only until it moves into the out-for-delivery state.</p>
+        </div>
+        <div class="news-item">
+          <h3>World daemon remains dry-run by default</h3>
+          <p class="muted">The current stack is safe for UI and API work before the live protobuf dispatch path is finished.</p>
+        </div>
+        <div class="news-item">
+          <h3>Protocol alignment still matters</h3>
+          <p class="muted">Amazon/UPS package identity, ownership, and redirect semantics should stay synchronized with your IG spec.</p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel" style="margin-top: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Quick Links</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Common account and shipment actions</h1>
+      </div>
+    </div>
+    <ul class="quick-link-list">
+      <li><a class="inline-link" href="{% url 'login' %}">Account login</a></li>
+      <li><a class="inline-link" href="{% url 'ups:dashboard' %}">Shipment dashboard</a></li>
+      <li><a class="inline-link" href="{% url 'ups:shipment-list' %}">My shipments</a></li>
+      <li><a class="inline-link" href="#track-module">Track a package</a></li>
+      <li><a class="inline-link" href="{% url 'ups:support-center' %}">Customer support</a></li>
+      <li><a class="inline-link" href="{% url 'ups:quote-overview' %}">Rate estimates</a></li>
+    </ul>
+  </section>
+{% endblock %}

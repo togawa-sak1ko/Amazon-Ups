@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="hero-shell" style="max-width: 980px; margin: 0 auto;">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Create Account</div>
+        <h1>Sign up for a Mini-UPS account.</h1>
+        <p>
+          Create a UPS username before Mini-Amazon integration is live so you can test account-linked
+          shipments, redirect controls, and support history directly in the portal.
+        </p>
+        <div class="hero-facts">
+          <article>
+            <strong>Shipment dashboard</strong>
+            <span class="muted">See account-owned packages in one place.</span>
+          </article>
+          <article>
+            <strong>Support history</strong>
+            <span class="muted">Review tickets tied to your account email.</span>
+          </article>
+          <article>
+            <strong>Redirect controls</strong>
+            <span class="muted">Update eligible destinations before final delivery begins.</span>
+          </article>
+        </div>
+      </div>
+      <div class="hero-panel">
+        <div class="tracking-module">
+          <h2>Create account</h2>
+          <p>Choose the username you expect Mini-Amazon to send once the two teams integrate.</p>
+          <form method="post" class="stack-form">
+            {% csrf_token %}
+            {% if form.errors %}
+              <div class="message message-error">
+                We could not create your account yet. If the page reloads, password fields are cleared for
+                security, so re-enter both passwords after fixing the highlighted issue.
+              </div>
+            {% endif %}
+            {% if form.non_field_errors %}
+              <div class="message message-error">{{ form.non_field_errors|striptags }}</div>
+            {% endif %}
+            <div>
+              <label for="{{ form.username.id_for_label }}">Username</label>
+              {{ form.username }}
+              {% if form.username.errors %}<div class="helper-note">{{ form.username.errors|striptags }}</div>{% endif %}
+            </div>
+            <div>
+              <label for="{{ form.email.id_for_label }}">Email</label>
+              {{ form.email }}
+              {% if form.email.errors %}<div class="helper-note">{{ form.email.errors|striptags }}</div>{% endif %}
+            </div>
+            <div>
+              <label for="{{ form.password1.id_for_label }}">Password</label>
+              {{ form.password1 }}
+              <div class="helper-note">
+                Use at least 8 characters and avoid passwords that are too common, all-numeric, or too similar
+                to your username or email.
+              </div>
+              {% if form.password1.errors %}<div class="helper-note">{{ form.password1.errors|striptags }}</div>{% endif %}
+            </div>
+            <div>
+              <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+              {{ form.password2 }}
+              <div class="helper-note">Re-enter the same password exactly. These fields are cleared after a failed signup.</div>
+              {% if form.password2.errors %}<div class="helper-note">{{ form.password2.errors|striptags }}</div>{% endif %}
+            </div>
+            <button class="button-gold" type="submit">Create account</button>
+          </form>
+          <div class="helper-note">Already have an account? <a class="inline-link" href="{% url 'login' %}">Sign in instead.</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

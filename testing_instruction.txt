@@ -1,0 +1,214 @@
+# Amazon C <-> UPS Integration Testing Guide
+
+This guide verifies that:
+1) UPS accepts team C Amazon protocol calls (`/pickup`, `/package-loaded`, `/redirect`)
+2) Amazon callback endpoints are correctly wired (`/truck-arrived`, `/package-delivered`)
+3) the live world flow completes end to end
+4) UPS signup works before the integrated flow starts
+
+Repo layout assumed:
+- `erss-project-zx158-zq65` (team C Mini-Amazon)
+- `erss-final-project-tl396-ldw59-hs452` (Mini-UPS)
+- `world_simulator_exec`
+
+Workspace root used below:
+`/Users/nautilus/Desktop/Duke_Spring2026/ECE568/final_project/ups-amazon-c`
+
+---
+
+## 0) Quick compatibility summary
+
+- Amazon -> UPS calls expect:
+  - `POST /pickup`
+  - `POST /package-loaded`
+  - `POST /redirect`
+- UPS -> Amazon callbacks expect:
+  - `POST /truck-arrived`
+  - `POST /package-delivered`
+- The wrapper start script automatically aligns both services to the same `world_id`
+- Linux support is included through:
+  - `host.docker.internal:host-gateway`
+  - `sh ./scripts/gen-proto.sh` in Amazon start scripts
+  - host port override support
+
+---
+
+## 1) Start the full stack
+
+From the repo root:
+
+```bash
+cd /Users/nautilus/Desktop/Duke_Spring2026/ECE568/final_project/ups-amazon-c
+./start_docker_only.sh
+```
+
+If ports `8080` or `8081` are already taken:
+
+```bash
+AMAZON_HTTP_PORT=8190 UPS_HTTP_PORT=8191 ./start_docker_only.sh
+```
+
+Expected result:
+- Amazon `/healthz` returns `{"status":"ok","world_id":<id>}`
+- UPS web loads successfully
+- UPS daemon prints `Connected to world id=...`
+
+---
+
+## 2) Health checks
+
+Default ports:
+
+```bash
+curl -s http://127.0.0.1:8080/healthz
+curl -I http://127.0.0.1:8081/
+```
+
+Overridden ports:
+
+```bash
+curl -s http://127.0.0.1:8190/healthz
+curl -I http://127.0.0.1:8191/
+```
+
+---
+
+## 3) UPS signup smoke test
+
+Open the UPS site and create a user before placing an Amazon order.
+
+Expected behavior:
+- valid password -> redirect to `/dashboard/`
+- invalid short password -> stay on signup page with a visible password error
+
+Example check with overridden ports:
+
+```bash
+tmp=$(mktemp -d)
+curl -s -c "$tmp/cookies" http://127.0.0.1:8191/accounts/signup/ >/dev/null
+csrf=$(awk '/miniups_csrftoken/ {print $7}' "$tmp/cookies")
+curl -i -b "$tmp/cookies" -c "$tmp/cookies" \
+  -e http://127.0.0.1:8191/accounts/signup/ \
+  -X POST \
+  --data "csrfmiddlewaretoken=$csrf&username=testuser&email=testuser%40example.com&password1=StrongPortal123!&password2=StrongPortal123!" \
+  http://127.0.0.1:8191/accounts/signup/
+rm -rf "$tmp"
+```
+
+Expected:
+- `HTTP/1.1 302`
+- `Location: /dashboard/`
+
+---
+
+## 4) Automated tests
+
+### Team C Amazon
+
+```bash
+cd /Users/nautilus/Desktop/Duke_Spring2026/ECE568/final_project/ups-amazon-c/erss-project-zx158-zq65
+docker-compose exec -T web pytest -q
+```
+
+Expected:
+
+```text
+12 passed
+```
+
+### UPS targeted suite
+
+```bash
+cd /Users/nautilus/Desktop/Duke_Spring2026/ECE568/final_project/ups-amazon-c/erss-final-project-tl396-ldw59-hs452
+docker-compose exec -T web python manage.py test \
+  ups.tests.PortalWorkflowTests \
+  ups.tests.RunWorldDaemonConnectTests \
+  ups.tests.WorldSocketClientResponseTests
+```
+
+Expected:
+
+```text
+17 tests ... OK
+```
+
+---
+
+## 5) Live end-to-end browser flow
+
+1. Sign up on UPS and remember that username.
+2. Open Amazon.
+3. Place a new order with:
+   - product `Widget`
+   - quantity `1`
+   - destination `(20, 30)`
+   - UPS username set to the UPS account you created
+4. Refresh the Amazon order detail page until status reaches `delivered`.
+
+Expected progression:
+- Amazon creates the order
+- Amazon calls UPS `/pickup`
+- UPS notifies Amazon `/truck-arrived`
+- Amazon calls UPS `/package-loaded`
+- UPS notifies Amazon `/package-delivered`
+
+Expected logs:
+- Amazon worker logs `POST ... /pickup`
+- Amazon web logs `POST /truck-arrived`
+- Amazon worker logs `POST ... /package-loaded`
+- Amazon web logs `POST /package-delivered`
+- UPS web logs `POST /pickup`
+- UPS web logs `POST /package-loaded`
+- UPS daemon logs `Processed world response ... delivered=1`
+
+---
+
+## 6) Final state verification
+
+Amazon final state example:
+
+```bash
+cd /Users/nautilus/Desktop/Duke_Spring2026/ECE568/final_project/ups-amazon-c/erss-project-zx158-zq65
+docker-compose exec -T web python -c "from app.db import SessionLocal; from app.models.order import Order; db=SessionLocal(); o=db.get(Order, 1); s=o.shipment; print({'status': o.status, 'package_id': s.package_id, 'truck_id': s.truck_id, 'last_error': s.last_error})"
+```
+
+UPS final state example:
+
+```bash
+cd /Users/nautilus/Desktop/Duke_Spring2026/ECE568/final_project/ups-amazon-c/erss-final-project-tl396-ldw59-hs452
+docker-compose exec -T web python manage.py shell -c "from ups.models import Shipment; s=Shipment.objects.get(package_id=1); print({'status': s.status, 'owner_reference': s.owner_reference, 'owner': getattr(s.owner, 'username', None), 'events': list(s.events.order_by('created_at').values_list('event_type', flat=True))})"
+```
+
+Expected:
+- Amazon order status `delivered`
+- UPS shipment status `delivered`
+- UPS owner matches the signup username
+- UPS events include:
+  - `shipment_registered`
+  - `pickup_queued`
+  - `truck_waiting`
+  - `amazon_truck_arrived_notified`
+  - `shipment_loaded`
+  - `delivery_queued`
+  - `shipment_delivered`
+  - `amazon_delivery_notified`
+
+---
+
+## 7) Troubleshooting
+
+- Port already allocated:
+  - rerun with `AMAZON_HTTP_PORT=8190 UPS_HTTP_PORT=8191`
+
+- Amazon container starts but exits immediately:
+  - verify `scripts/start-web.sh` and `scripts/start-worker.sh` call `sh ./scripts/gen-proto.sh`
+
+- Linux container cannot reach host service:
+  - verify compose files include `host.docker.internal:host-gateway`
+
+- UPS signup looks like it reset:
+  - invalid passwords intentionally clear password fields
+  - the page should show a visible password error now
+
+- World simulator is unstable:
+  - verify `world_simulator_exec/docker_deploy/docker-compose.yml` uses `postgres:12-alpine3.15`

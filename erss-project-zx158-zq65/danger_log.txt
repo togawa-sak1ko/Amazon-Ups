@@ -1,0 +1,16 @@
+Team 1c Amazon Danger Log
+
+1. Risk: duplicate or dropped messages from the World simulator.
+Mitigation: the world client tracks seqnums, retries unacked commands, and sends response acks.
+
+2. Risk: HTTP coordination failures with UPS causing shipment state divergence.
+Mitigation: UPS requests use bounded retries for network and 5xx failures, and shipment errors are persisted for operator visibility.
+
+3. Risk: web requests blocking on asynchronous world events.
+Mitigation: order creation only persists work; a background worker handles world and UPS orchestration.
+
+4. Risk: duplicate processing after a terminal failure.
+Mitigation: failed shipments are removed from worker queues until manually repaired.
+
+5. Risk: stale protobuf bindings during Docker development with bind mounts.
+Mitigation: protobuf code is regenerated during image build and again at container startup.

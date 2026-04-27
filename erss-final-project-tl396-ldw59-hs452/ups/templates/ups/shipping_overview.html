@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Shipping | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="hero-shell">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Shipping</div>
+        <h1>Shipping control center for live package activity.</h1>
+        <p>
+          This page now reflects real portal state instead of placeholder sections: shipment counts,
+          saved quote activity, active support work, and service-location references all sit in one
+          carrier-style workspace.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="{% url 'ups:quote-overview' %}">Estimate time and cost</a>
+          <a class="button button-secondary" href="{% url 'ups:support-center' %}">Open support</a>
+        </div>
+        <div class="hero-facts">
+          <article>
+            <strong>{{ counts.total }}</strong>
+            <span class="muted">Tracked shipments in scope</span>
+          </article>
+          <article>
+            <strong>{{ counts.warehouse_flow }}</strong>
+            <span class="muted">Still in warehouse or loading flow</span>
+          </article>
+          <article>
+            <strong>{{ counts.out_for_delivery }}</strong>
+            <span class="muted">Currently out for delivery</span>
+          </article>
+          <article>
+            <strong>{{ counts.delivered }}</strong>
+            <span class="muted">Completed deliveries</span>
+          </article>
+        </div>
+      </div>
+
+      <aside class="hero-panel">
+        <div class="track-tabs">
+          <a class="active" href="{% url 'ups:shipping-overview' %}">Overview</a>
+          <a href="{% url 'ups:support-center' %}">Support</a>
+          <a href="{% url 'ups:locations-center' %}">Locations</a>
+        </div>
+        <div class="tracking-module">
+          <h2>Shipping workspace</h2>
+          <p>Move between rate planning, account shipment review, support intake, and location lookup.</p>
+          <div class="label-list">
+            <div class="label-row">
+              <strong>Saved quotes</strong>
+              <span>{{ counts.saved_quotes }}</span>
+            </div>
+            <div class="label-row">
+              <strong>Open support</strong>
+              <span>{{ counts.open_tickets }}</span>
+            </div>
+            <div class="label-row">
+              <strong>Locations listed</strong>
+              <span>{{ locations|length }}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="quick-links">
+    <article class="quick-link">
+      <h3>Shipment intake API</h3>
+      <p class="muted">The IG-facing JSON intake endpoint remains the backend source of truth for new packages.</p>
+      <a class="inline-link" href="{% url 'ups:home' %}">Track current intake</a>
+    </article>
+    <article class="quick-link">
+      <h3>Rate planning</h3>
+      <p class="muted">Calculate route cost scenarios before you expose richer shipment-creation forms.</p>
+      <a class="inline-link" href="{% url 'ups:quote-overview' %}">Open quote tools</a>
+    </article>
+    <article class="quick-link">
+      <h3>Delivery changes</h3>
+      <p class="muted">Signed-in users can inspect owned shipments and redirect them before final delivery begins.</p>
+      {% if request.user.is_authenticated %}
+        <a class="inline-link" href="{% url 'ups:shipment-list' %}">Open my shipments</a>
+      {% else %}
+        <a class="inline-link" href="{% url 'login' %}">Sign in for account access</a>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="panel" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Recent shipping activity</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Current shipment queue</h1>
+        <p class="muted">A live slice of the package stream feeding your UPS-side operations.</p>
+      </div>
+      <span class="status-chip">{{ recent_shipments|length }} shown</span>
+    </div>
+    <table class="tracking-table">
+      <thead>
+        <tr>
+          <th>Tracking</th>
+          <th>Status</th>
+          <th>Truck</th>
+          <th>Destination</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for shipment in recent_shipments %}
+          <tr>
+            <td><a href="{% url 'ups:tracking-result' shipment.tracking_number %}">{{ shipment.tracking_number }}</a></td>
+            <td><span class="status-chip {% if shipment.status == 'delivered' %}ok{% endif %}">{{ shipment.get_status_display }}</span></td>
+            <td>{% if shipment.assigned_truck %}{{ shipment.assigned_truck.truck_id }}{% else %}<span class="muted">Pending</span>{% endif %}</td>
+            <td>({{ shipment.destination_x }}, {{ shipment.destination_y }})</td>
+            <td>{{ shipment.updated_at }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="empty-state">No shipment activity has been recorded yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section-grid two-up">
+    <article class="panel">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Quote history</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Recent rate scenarios</h1>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Route</th>
+            <th>Cost</th>
+            <th>Transit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for quote in recent_quotes %}
+            <tr>
+              <td><a href="{% url 'ups:quote-overview' %}?quote={{ quote.pk }}">{{ quote.get_service_level_display }}</a></td>
+              <td>({{ quote.origin_x }}, {{ quote.origin_y }}) to ({{ quote.destination_x }}, {{ quote.destination_y }})</td>
+              <td>{{ quote.estimated_cost_display }}</td>
+              <td>{{ quote.estimated_business_days }} business day{{ quote.estimated_business_days|pluralize }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="empty-state">No saved quote scenarios yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </article>
+
+    <article class="panel">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Support and locations</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Operational follow-up</h1>
+        </div>
+      </div>
+      <div class="news-list">
+        {% for ticket in support_tickets %}
+          <div class="news-item">
+            <h3>{{ ticket.subject }}</h3>
+            <p class="muted">{{ ticket.get_category_display }} · {{ ticket.get_status_display }}</p>
+          </div>
+        {% empty %}
+          <div class="news-item">
+            <h3>No open support items</h3>
+            <p class="muted">Support requests submitted through the portal will appear here.</p>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="label-list" style="margin-top: 1rem;">
+        {% for location in locations %}
+          <div class="label-row">
+            <strong>{{ location.name }}</strong>
+            <span class="muted">{{ location.city }}, {{ location.state }} · {{ location.type }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% endblock %}

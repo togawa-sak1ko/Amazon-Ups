@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Search | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="hero-shell">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Search</div>
+        <h1>Search across tracking, portal tools, and service locations.</h1>
+        <p>
+          The portal search now checks shipment identifiers, UPS-side navigation destinations, and
+          location data so users can move quickly between tracking and support tasks.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#search-results">Open results</a>
+          <a class="button button-secondary" href="{% url 'ups:home' %}">Back to tracking</a>
+        </div>
+        {% if results %}
+          <div class="hero-facts">
+            <article>
+              <strong>{{ results.shipments|length }}</strong>
+              <span class="muted">Shipment matches</span>
+            </article>
+            <article>
+              <strong>{{ results.page_matches|length }}</strong>
+              <span class="muted">Portal page matches</span>
+            </article>
+            <article>
+              <strong>{{ results.locations|length }}</strong>
+              <span class="muted">Location matches</span>
+            </article>
+          </div>
+        {% endif %}
+      </div>
+
+      <aside class="hero-panel">
+        <div class="track-tabs">
+          <a class="active" href="#search-results">Search</a>
+          <a href="{% url 'ups:home' %}">Track</a>
+          <a href="{% url 'ups:locations-center' %}">Locate</a>
+        </div>
+        <div class="tracking-module">
+          <h2>Search the portal</h2>
+          <p>Enter a tracking number, username, support term, or location keyword.</p>
+          <form method="get" class="stack-form">
+            <div>
+              <label for="{{ form.query.id_for_label }}">{{ form.query.label }}</label>
+              {{ form.query }}
+            </div>
+            <button class="button-gold" type="submit">Search</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="panel" id="search-results" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Results</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Search results{% if query %} for "{{ query }}"{% endif %}</h1>
+        <p class="muted">Shipment matches are public tracking results; portal pages and locations help route the user to the right tool.</p>
+      </div>
+    </div>
+    {% if results %}
+      <table>
+        <thead>
+          <tr>
+            <th>Tracking</th>
+            <th>Status</th>
+            <th>Destination</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for shipment in results.shipments %}
+            <tr>
+              <td>{{ shipment.tracking_number }}</td>
+              <td>{{ shipment.get_status_display }}</td>
+              <td>({{ shipment.destination_x }}, {{ shipment.destination_y }})</td>
+              <td><a href="{% url 'ups:tracking-result' shipment.tracking_number %}">Open tracking</a></td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="empty-state">No shipment matches.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">Enter a search term to scan shipments, portal pages, and locations.</div>
+    {% endif %}
+  </section>
+
+  <section class="section-grid two-up">
+    <article class="panel">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Portal matches</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Relevant tools</h1>
+        </div>
+      </div>
+      <div class="news-list">
+        {% if results %}
+          {% for page in results.page_matches %}
+            <div class="news-item">
+              <h3><a class="inline-link" href="{% url page.url_name %}">{{ page.title }}</a></h3>
+              <p class="muted">{{ page.description }}</p>
+            </div>
+          {% empty %}
+            <div class="news-item">
+              <h3>No direct tool match</h3>
+              <p class="muted">Try searching for terms like tracking, quote, support, alerts, or locations.</p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="news-item">
+            <h3>Search suggestions</h3>
+            <p class="muted">Try a tracking number, a username, Durham, support, or quote.</p>
+          </div>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Location matches</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Related service points</h1>
+        </div>
+      </div>
+      <div class="label-list">
+        {% if results %}
+          {% for location in results.locations %}
+            <div class="label-row">
+              <strong>{{ location.name }}</strong>
+              <span class="muted">{{ location.city }}, {{ location.state }} · {{ location.type }}</span>
+            </div>
+          {% empty %}
+            <div class="empty-state">No location matches.</div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">Location matches appear here after you search.</div>
+        {% endif %}
+      </div>
+    </article>
+  </section>
+{% endblock %}

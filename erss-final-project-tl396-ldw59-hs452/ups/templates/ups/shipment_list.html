@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}My Shipments | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="panel" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">My shipments</div>
+        <h1>Account shipment list</h1>
+        <p>Packages tied to your UPS username or explicit account ownership.</p>
+      </div>
+      <span class="status-chip">Customer view</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <table class="tracking-table">
+      <thead>
+        <tr>
+          <th>Tracking</th>
+          <th>Status</th>
+          <th>Destination</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for shipment in shipments %}
+          <tr>
+            <td><a href="{% url 'ups:shipment-detail' shipment.tracking_number %}">{{ shipment.tracking_number }}</a></td>
+            <td><span class="status-chip {% if shipment.status == 'delivered' %}ok{% endif %}">{{ shipment.get_status_display }}</span></td>
+            <td>({{ shipment.destination_x }}, {{ shipment.destination_y }})</td>
+            <td>{{ shipment.updated_at }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4" class="empty-state">No shipments are tied to this account yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

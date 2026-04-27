@@ -1,0 +1,155 @@
+# Required Edits Applied
+
+This file lists all concrete code and config changes made during integration work for our Mini-UPS and team C Mini-Amazon.
+
+## 1) Wrapper repo layout aligned to team C
+
+### Files changed
+- `README.md`
+- `start_docker_only.sh`
+- `startup_instructions.md`
+- `testing_instruction.txt`
+
+### What was changed
+- Built a wrapper repo with:
+  - `erss-final-project-tl396-ldw59-hs452`
+  - `erss-project-zx158-zq65`
+  - `world_simulator_exec`
+- Used team C's original repo name, `erss-project-zx158-zq65`, as the embedded Amazon folder name.
+- Updated wrapper scripts and docs to point to that folder.
+
+### Why
+- The combined repo should clearly show that this is team C's Amazon code, not team B's.
+
+## 2) World simulator reliability fix applied
+
+### File changed
+- `world_simulator_exec/docker_deploy/docker-compose.yml`
+
+### What was changed
+- Changed `image: postgres` to `image: postgres:12-alpine3.15`
+
+### Why
+- This matches the recommended fix for more reliable world simulator startup.
+
+## 3) Team C Amazon Linux/container routing support
+
+### File changed
+- `erss-project-zx158-zq65/docker-compose.yml`
+
+### What was changed
+- Added:
+  - `extra_hosts:`
+  - `"host.docker.internal:host-gateway"`
+  to both `web` and `worker`
+
+### Why
+- On Linux, the Amazon containers need a reliable way to reach the host-running UPS service.
+
+## 4) Team C Amazon startup script hardening
+
+### Files changed
+- `erss-project-zx158-zq65/scripts/start-web.sh`
+- `erss-project-zx158-zq65/scripts/start-worker.sh`
+
+### What was changed
+- Changed `./scripts/gen-proto.sh` to `sh ./scripts/gen-proto.sh`
+
+### Why
+- This avoids Linux bind-mount permission problems that can stop the containers from starting.
+
+## 5) UPS Linux/container routing and port override support
+
+### File changed
+- `erss-final-project-tl396-ldw59-hs452/docker-compose.yml`
+
+### What was changed
+- Added `host.docker.internal:host-gateway` to UPS `web` and `daemon`
+- Made the UPS host port overrideable with `${UPS_HTTP_PORT:-8081}`
+- Removed the unnecessary Postgres host-port bind
+
+### Why
+- Linux Docker networking needs explicit host-gateway mapping.
+- Shared machines often already have `8081` or a Postgres port in use.
+
+## 6) Combined startup automation added
+
+### File changed
+- `start_docker_only.sh`
+
+### What was changed
+- Added a wrapper startup script that:
+  - starts the world simulator
+  - starts UPS
+  - writes `erss-project-zx158-zq65/.env`
+  - starts team C Amazon
+  - reads Amazon `world_id` from `/healthz`
+  - aligns UPS to that same `world_id`
+  - starts the UPS daemon in live mode
+- Added support for:
+  - `AMAZON_HTTP_PORT`
+  - `UPS_HTTP_PORT`
+  - `USE_VM_WORLD`
+  - `VM_WORLD_HOST`
+
+### Why
+- Starting three separate stacks manually is error-prone.
+- The shared `world_id` has to match for the integrated flow to work.
+
+## 7) UPS signup and password flow fix applied
+
+### Files changed
+- `erss-final-project-tl396-ldw59-hs452/ups/forms.py`
+- `erss-final-project-tl396-ldw59-hs452/ups/views.py`
+- `erss-final-project-tl396-ldw59-hs452/ups/templates/registration/signup.html`
+- `erss-final-project-tl396-ldw59-hs452/ups/tests.py`
+
+### What was changed
+- Added safer field attributes on signup inputs
+- Ensured the signup page sets a CSRF cookie reliably
+- Added visible error messaging when password validation fails
+- Added regression coverage for invalid-password signup behavior
+
+### Why
+- Users reported that signup appeared to reset and return to the signup page after password entry.
+- The real issue was validation failure without clear enough feedback.
+
+## 8) UPS targeted daemon test updated
+
+### File changed
+- `erss-final-project-tl396-ldw59-hs452/ups/tests.py`
+
+### What was changed
+- Updated the daemon polling test to create an in-flight `ACKED` world command before asserting response polling behavior
+
+### Why
+- The live daemon only polls world responses when there is active in-flight or acked work.
+- The old test setup no longer matched the implementation.
+
+## 9) Root-level startup and testing docs added
+
+### Files changed
+- `startup_instructions.md`
+- `testing_instruction.txt`
+- `edits_required.txt`
+
+### What was changed
+- Added wrapper-level startup, testing, and edit-tracking docs in the same overall style as `ups-amazon-b`
+
+### Why
+- The combined repo needs a clear record of what changed and how to start and test it.
+
+## 10) Linux verification completed
+
+### Environment used
+- `vcm-51642.vm.duke.edu`
+
+### What was verified
+- the wrapper startup script worked on Linux
+- team C Amazon tests passed
+- UPS targeted tests passed
+- valid UPS signup redirected to `/dashboard/`
+- live Amazon -> UPS -> world -> UPS -> Amazon flow completed
+
+### Why
+- This combined repo needs to work on a Linux machine for team use and demo preparation.

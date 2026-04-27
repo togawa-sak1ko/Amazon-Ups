@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Log In | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="hero-shell" style="max-width: 920px; margin: 0 auto;">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Accounts</div>
+        <h1>Sign in to manage your shipments.</h1>
+        <p>
+          Use the UPS username that Amazon sends with the purchase if your group is linking ownership
+          across systems.
+        </p>
+        <div class="hero-facts">
+          <article>
+            <strong>Shipment list</strong>
+            <span class="muted">Review all packages tied to your account.</span>
+          </article>
+          <article>
+            <strong>Package contents</strong>
+            <span class="muted">Inspect shipment items from the account workspace.</span>
+          </article>
+          <article>
+            <strong>Redirect access</strong>
+            <span class="muted">Change destination before the truck goes out for delivery.</span>
+          </article>
+        </div>
+      </div>
+      <div class="hero-panel">
+        <div class="tracking-module">
+          <h2>Account login</h2>
+          <p>Enter your credentials to access the UPS customer portal.</p>
+          <form method="post" class="stack-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+              <div class="message message-error">{{ form.non_field_errors|striptags }}</div>
+            {% endif %}
+            <div>
+              <label for="{{ form.username.id_for_label }}">Username</label>
+              {{ form.username }}
+            </div>
+            <div>
+              <label for="{{ form.password.id_for_label }}">Password</label>
+              {{ form.password }}
+              <div class="helper-note">Use the UPS username linked from Amazon if your order ownership is coordinated across both systems.</div>
+            </div>
+            <button class="button-gold" type="submit">Sign in</button>
+          </form>
+          <div class="helper-note">Need an account first? <a class="inline-link" href="{% url 'ups:signup' %}">Create one here.</a></div>
+          <div class="helper-note">Just tracking a package? You can stay signed out and use the public tracking form.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

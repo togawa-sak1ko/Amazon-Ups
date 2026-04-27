@@ -1,0 +1,74 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-ups}
+      POSTGRES_USER: ${DATABASE_USER:-ups}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-ups}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8081"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-replace-me}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost,host.docker.internal,vcm-51642.vm.duke.edu,67.159.74.167,67.159.75.250}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://127.0.0.1:8081,http://localhost:8081,http://vcm-51642.vm.duke.edu:8081,http://67.159.74.167:8081,http://67.159.75.250:8081,http://vcm-51642.vm.duke.edu:8191,http://67.159.74.167:8191,http://67.159.75.250:8191}
+      UPS_PORT: ${UPS_PORT:-8081}
+      AMAZON_HOST: ${AMAZON_HOST:-amazon}
+      AMAZON_PORT: ${AMAZON_PORT:-8080}
+      DATABASE_NAME: ${DATABASE_NAME:-ups}
+      DATABASE_USER: ${DATABASE_USER:-ups}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-ups}
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      WORLD_HOST: ${WORLD_HOST:-world}
+      WORLD_PORT: ${WORLD_PORT:-12345}
+      WORLD_DAEMON_DRY_RUN: ${WORLD_DAEMON_DRY_RUN:-1}
+      UPS_API_TOKEN: ${UPS_API_TOKEN:-dev-ups-token}
+    volumes:
+      - .:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${UPS_HTTP_PORT:-8081}:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  daemon:
+    build: .
+    command: python manage.py run_world_daemon --poll-interval 5 --dry-run
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-replace-me}
+      UPS_PORT: ${UPS_PORT:-8081}
+      AMAZON_HOST: ${AMAZON_HOST:-amazon}
+      AMAZON_PORT: ${AMAZON_PORT:-8080}
+      DATABASE_NAME: ${DATABASE_NAME:-ups}
+      DATABASE_USER: ${DATABASE_USER:-ups}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-ups}
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      WORLD_HOST: ${WORLD_HOST:-world}
+      WORLD_PORT: ${WORLD_PORT:-12345}
+      WORLD_DAEMON_DRY_RUN: ${WORLD_DAEMON_DRY_RUN:-1}
+      UPS_API_TOKEN: ${UPS_API_TOKEN:-dev-ups-token}
+    volumes:
+      - .:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

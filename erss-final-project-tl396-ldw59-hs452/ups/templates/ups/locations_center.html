@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Locations | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="hero-shell">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Locations</div>
+        <h1>Find access points, customer centers, and operations hubs.</h1>
+        <p>
+          The location page now supports filtering and exposes sample service points that fit the UPS-side
+          project model: customer service, pickup, dispatch, and warehouse-facing operations.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#location-search">Search locations</a>
+          <a class="button button-secondary" href="{% url 'ups:shipping-overview' %}">Back to shipping</a>
+        </div>
+      </div>
+
+      <aside class="hero-panel" id="location-search">
+        <div class="track-tabs">
+          <a class="active" href="#location-search">Locations</a>
+          <a href="{% url 'ups:locations-center' %}?query=pickup">Pickup</a>
+          <a href="{% url 'ups:locations-center' %}?query=support">Support</a>
+        </div>
+        <div class="tracking-module">
+          <h2>Filter service points</h2>
+          <p>Search by city, postal code, service type, or supported activity.</p>
+          <form method="get" class="stack-form">
+            <div>
+              <label for="location-query">Search locations</label>
+              <input id="location-query" type="text" name="query" value="{{ query }}" placeholder="Durham, pickup, support, 27701">
+            </div>
+            <button class="button-gold" type="submit">Find locations</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="quick-links">
+    {% for item in location_type_counts %}
+      <article class="quick-link">
+        <h3>{{ item.label }}</h3>
+        <p class="muted">{{ item.count }} location{{ item.count|pluralize }} in this directory.</p>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="panel" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Location directory</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Service points</h1>
+        <p class="muted">
+          {% if query %}
+            Results filtered by "{{ query }}".
+          {% else %}
+            Browse the current sample service network.
+          {% endif %}
+        </p>
+      </div>
+      <span class="status-chip">{{ locations|length }} match{{ locations|length|pluralize:"es" }}</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>City</th>
+          <th>Postal code</th>
+          <th>Services</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for location in locations %}
+          <tr>
+            <td>{{ location.name }}</td>
+            <td>{{ location.type }}</td>
+            <td>{{ location.city }}, {{ location.state }}</td>
+            <td>{{ location.postal_code }}</td>
+            <td>{{ location.services|join:", " }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="empty-state">No locations matched that filter.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="quick-links">
+    <article class="quick-link">
+      <h3>Pickup and will call</h3>
+      <p class="muted">Use access points and pickup counters for customer-facing hold or pickup scenarios.</p>
+    </article>
+    <article class="quick-link">
+      <h3>Operations hubs</h3>
+      <p class="muted">Distribution and dispatch locations can be tied to future world-daemon or warehouse tooling.</p>
+    </article>
+    <article class="quick-link">
+      <h3>Support routing</h3>
+      <p class="muted">Support and tracking help services are searchable here so users can find the right entry point quickly.</p>
+    </article>
+  </section>
+{% endblock %}

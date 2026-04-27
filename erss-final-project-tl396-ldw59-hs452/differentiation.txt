@@ -1,0 +1,24 @@
+Product differentiation for our Mini-UPS
+
+We focused our product differentiation on features that make our Mini-UPS feel like a real shipping service, not just a minimal protocol implementation. We wanted the product to be distinctive in both customer experience and shipping workflow behavior.
+
+1. We built account-linked package ownership through the Amazon/UPS protocol.
+When Amazon includes a UPS username in `/pickup`, our system binds that package to the matching UPS account automatically. This makes packages appear directly in a user’s shipment list instead of living only in a public tracking flow. That coordination between Amazon and UPS gives the portal a more realistic and integrated experience.
+
+2. We built a shipment workspace instead of only a simple tracking page.
+For each owned shipment, users can open a detailed page with package contents, destination, assigned truck, redirect controls, and a full event timeline. This makes the product feel like a shipping portal where users can actually manage a package, not just check one status string.
+
+3. We added redirect guardrails with clear business behavior.
+Users can redirect a package only while it is still eligible, and both the UI and API explain whether the redirect was accepted or rejected. This stands out because it reflects real shipping constraints instead of treating redirection like an unrestricted form field.
+
+4. We added a useful operations dashboard.
+The dashboard summarizes pending, out-for-delivery, and delivered shipments and gives quick access to recent package activity. This gives our Mini-UPS an operations view in addition to a customer view, which makes the product more complete than a tracking-only system.
+
+5. We added support, alerts, quote, search, and location workflows.
+The portal includes saved quote estimation, support ticket submission, an alerts feed, searchable service locations, and portal-wide search. These features are not required for the bare minimum protocol, but together they make our Mini-UPS feel like a more full-featured shipping company with customer-service tools rather than only a transport backend.
+
+6. We kept the web portal and world daemon separate on purpose.
+The Django app handles the user-facing portal and HTTP protocol endpoints, while the daemon handles world communication, acknowledgements, retries, and asynchronous updates. This separation makes the system more robust and easier to reason about, especially once real world failures and integration timing issues appear.
+
+7. We made the differentiation visible in real user flows.
+The strongest features are easy to see directly: a package shows up under the correct UPS account, the shipment page shows a timeline of events, redirects are either accepted or blocked with a clear reason, the dashboard changes by shipment status, and support or quote history remains visible in the portal. That makes the product feel more polished and more distinctive than a baseline Mini-UPS.

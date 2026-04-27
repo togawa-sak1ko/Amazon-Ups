@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Order {{ order.order_id }} | Mini Amazon</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="topbar">
+        <a class="brand" href="/" aria-label="Mini Amazon home">
+          <span class="brand-name">amazon</span><span class="brand-smile"></span>
+        </a>
+        <div class="order-search-copy">
+          <strong>Order #{{ order.order_id }}</strong>
+          <span>Package {{ order.package_id }}</span>
+        </div>
+        <a class="header-link" href="/">Return to storefront</a>
+      </div>
+      <nav class="nav-strip" aria-label="Order sections">
+        <a href="#summary">Summary</a>
+        <a href="#timeline">Timeline</a>
+        <a href="#redirect">Redirect</a>
+        <span>{{ status_labels.get(order.status, order.status) }}</span>
+      </nav>
+    </header>
+
+    <main>
+      <section class="order-hero" id="summary">
+        <div class="order-copy">
+          <p class="eyebrow">Order details</p>
+          <h1>{{ order.product_name }}</h1>
+          <p>
+            {{ order.quantity }} item{{ "" if order.quantity == 1 else "s" }} moving from
+            Warehouse {{ order.warehouse_id }} to ({{ order.dest_x }}, {{ order.dest_y }}).
+          </p>
+          {% if message %}
+            <p class="flash">{{ message }}</p>
+          {% endif %}
+          <div class="status-panel status-panel-{{ order.status }}">
+            <div class="status-line">
+              <span>{{ status_labels.get(order.status, order.status) }}</span>
+              <strong>{{ status_percent }}%</strong>
+            </div>
+            <div class="progress-track" aria-label="Order progress">
+              <span style="width: {{ status_percent }}%"></span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="package-card">
+          <div class="package-art" aria-hidden="true">
+            <span class="box-top"></span>
+            <span class="box-face"></span>
+          </div>
+          <dl class="compact-details">
+            <div><dt>Package ID</dt><dd>{{ order.package_id }}</dd></div>
+            <div><dt>Truck</dt><dd>{{ order.truck_id or "Pending" }}</dd></div>
+            <div><dt>UPS Username</dt><dd>{{ order.ups_username or "Not linked" }}</dd></div>
+          </dl>
+        </aside>
+      </section>
+
+      <section class="detail-grid">
+        <article class="detail-panel" id="timeline">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Tracking</p>
+              <h2>Fulfillment timeline</h2>
+            </div>
+          </div>
+          <ol class="timeline">
+            {% for step in status_steps %}
+              <li class="{% if order.status == 'failed' and loop.index0 == 0 %}is-failed{% elif loop.index0 <= current_step %}is-complete{% endif %}">
+                <span></span>
+                <div>
+                  <strong>{{ status_labels.get(step, step) }}</strong>
+                  <p>
+                    {% if step == "created" %}
+                      Amazon accepted the customer order and created a package id.
+                    {% elif step == "pickup_requested" %}
+                      Amazon requested a UPS truck for this warehouse pickup.
+                    {% elif step == "packing_requested" %}
+                      Inventory has been requested from the simulated world.
+                    {% elif step == "packed" %}
+                      The package is packed and ready for truck arrival.
+                    {% elif step == "truck_arrived" %}
+                      UPS has arrived at Warehouse {{ order.warehouse_id }}.
+                    {% elif step == "loading_requested" %}
+                      Amazon asked the world to load the package onto the truck.
+                    {% elif step == "loaded" %}
+                      The package is physically loaded in the world simulator.
+                    {% elif step == "out_for_delivery" %}
+                      UPS has been notified that delivery can begin.
+                    {% else %}
+                      UPS confirmed final delivery to the destination.
+                    {% endif %}
+                  </p>
+                </div>
+              </li>
+            {% endfor %}
+          </ol>
+          {% if order.last_error %}
+            <div class="error-note">
+              <strong>Last error</strong>
+              <p>{{ order.last_error }}</p>
+            </div>
+          {% endif %}
+        </article>
+
+        <aside class="detail-panel" id="redirect">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">Delivery</p>
+              <h2>Destination controls</h2>
+            </div>
+          </div>
+          <dl class="info-list">
+            <div><dt>Current destination</dt><dd>({{ order.dest_x }}, {{ order.dest_y }})</dd></div>
+            <div><dt>Quantity</dt><dd>{{ order.quantity }}</dd></div>
+            <div><dt>Status</dt><dd>{{ status_labels.get(order.status, order.status) }}</dd></div>
+          </dl>
+
+          {% if order.status != "delivered" and order.status != "failed" %}
+            <form method="post" action="/orders/{{ order.order_id }}/redirect" class="order-form redirect-form">
+              <div class="coordinate-grid">
+                <label>
+                  <span>New Destination X</span>
+                  <input type="number" name="dest_x" value="{{ order.dest_x }}" required>
+                </label>
+                <label>
+                  <span>New Destination Y</span>
+                  <input type="number" name="dest_y" value="{{ order.dest_y }}" required>
+                </label>
+              </div>
+              <button type="submit" class="checkout-button">Update destination</button>
+            </form>
+          {% else %}
+            <p class="locked-note">This order can no longer be redirected.</p>
+          {% endif %}
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <strong>Mini Amazon</strong>
+      <span>Order {{ order.order_id }} is synchronized with the Amazon worker, the world simulator, and UPS callbacks.</span>
+    </footer>
+  </body>
+</html>

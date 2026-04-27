@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Support | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="hero-shell">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Support</div>
+        <h1>Get help through a support page that feels clear and easy to use.</h1>
+        <p>
+          Submit a structured request for tracking, delivery, billing, account, or technical issues.
+          The form keeps everything in one place so users do not need to hunt for the next step.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#support-form">Submit a request</a>
+          <a class="button button-secondary" href="{% url 'ups:alerts-center' %}">View alert feed</a>
+        </div>
+        <div class="hero-facts">
+          <article>
+            <strong>{{ status_counts.open }}</strong>
+            <span class="muted">Open tickets on this account</span>
+          </article>
+          <article>
+            <strong>{{ status_counts.in_progress }}</strong>
+            <span class="muted">Currently under review</span>
+          </article>
+          <article>
+            <strong>{{ status_counts.resolved }}</strong>
+            <span class="muted">Resolved support issues</span>
+          </article>
+        </div>
+      </div>
+
+      <aside class="hero-panel" id="support-form">
+        <div class="track-tabs">
+          <a class="active" href="#support-form">Support</a>
+          <a href="{% url 'ups:home' %}">Tracking</a>
+          <a href="#delivery-support">Delivery</a>
+        </div>
+        <div class="tracking-module">
+          <h2>Contact support</h2>
+          <p>Provide the essentials and the portal will keep the request visible in your support history.</p>
+          <form method="post" class="stack-form">
+            {% csrf_token %}
+            <div class="section-grid three-up">
+              <div>
+                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="muted">{{ form.email.errors|striptags }}</div>{% endif %}
+              </div>
+              <div>
+                <label for="{{ form.tracking_number.id_for_label }}">{{ form.tracking_number.label }}</label>
+                {{ form.tracking_number }}
+                {% if form.tracking_number.errors %}<div class="muted">{{ form.tracking_number.errors|striptags }}</div>{% endif %}
+              </div>
+              <div>
+                <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+                {{ form.category }}
+                {% if form.category.errors %}<div class="muted">{{ form.category.errors|striptags }}</div>{% endif %}
+              </div>
+            </div>
+            <div>
+              <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
+              {{ form.subject }}
+              {% if form.subject.errors %}<div class="muted">{{ form.subject.errors|striptags }}</div>{% endif %}
+            </div>
+            <div>
+              <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+              {{ form.message }}
+              <div class="helper-note">Include the package ID, the issue you noticed, and the result you need.</div>
+              {% if form.message.errors %}<div class="muted">{{ form.message.errors|striptags }}</div>{% endif %}
+            </div>
+            <button class="button-gold" type="submit">Submit request</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="callout" style="margin-bottom: 1rem;">
+    <div>
+      <strong>Support works best with the package ID from Amazon or UPS.</strong>
+      <span class="muted">Adding that reference up front makes tracking and delivery questions easier to resolve.</span>
+    </div>
+    <div class="callout-actions">
+      <a class="button button-primary" href="#support-form">Open the form</a>
+      <a class="button button-secondary" href="{% url 'ups:home' %}">Track a package first</a>
+    </div>
+  </section>
+
+  <section class="quick-links">
+    <article class="quick-link">
+      <h3>Tracking questions</h3>
+      <p class="muted">Use the ticket flow for missing updates, delayed scans, or delivery timing questions.</p>
+    </article>
+    <article class="quick-link" id="delivery-support">
+      <h3>Delivery changes</h3>
+      <p class="muted">Support can guide customers toward account-based redirect tools when a package is still eligible.</p>
+    </article>
+    <article class="quick-link">
+      <h3>Account and billing</h3>
+      <p class="muted">The same intake flow covers access issues and rate questions without leaving the portal.</p>
+    </article>
+  </section>
+
+  {% if created_ticket %}
+    <section class="panel" style="margin-bottom: 1rem;">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Request submitted</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Ticket #{{ created_ticket.pk }}</h1>
+        </div>
+        <span class="status-chip ok">{{ created_ticket.get_status_display }}</span>
+      </div>
+      <div class="label-list">
+        <div class="label-row">
+          <strong>Subject</strong>
+          <span>{{ created_ticket.subject }}</span>
+        </div>
+        <div class="label-row">
+          <strong>Category</strong>
+          <span>{{ created_ticket.get_category_display }}</span>
+        </div>
+        <div class="label-row">
+          <strong>Tracking number</strong>
+          <span>{% if created_ticket.tracking_number %}{{ created_ticket.tracking_number }}{% else %}<span class="muted">Not provided</span>{% endif %}</span>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="panel">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Support history</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Recent tickets</h1>
+        <p class="muted">Signed-in users can review their current support queue here.</p>
+      </div>
+      <span class="status-chip">{{ recent_tickets|length }} shown</span>
+    </div>
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Subject</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in recent_tickets %}
+            <tr>
+              <td>#{{ ticket.pk }}</td>
+              <td>{{ ticket.subject }}</td>
+              <td>{{ ticket.get_category_display }}</td>
+              <td><span class="status-chip {% if ticket.status == 'resolved' %}ok{% endif %}">{{ ticket.get_status_display }}</span></td>
+              <td>{{ ticket.updated_at }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="empty-state">No account-linked support history is available yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,8 @@
+Team 1c Amazon Differentiation
+
+1. Split web and worker processes with a shared database so the UI stays responsive while fulfillment continues asynchronously.
+2. Human-readable order tracking page that exposes package id, warehouse, truck, UPS username, destination, and the latest error.
+3. Searchable catalog UI instead of a single fixed product button.
+4. Destination redirect flow from the Amazon side, including UPS redirect forwarding after pickup has been scheduled.
+5. Persistent shipment state machine that records intermediate fulfillment milestones and terminal failures for debugging.
+6. Amazon-inspired storefront UI with product selection, checkout, fulfillment metrics, recent orders, and a detailed tracking timeline.

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ shipment.tracking_number }} | Track Package{% endblock %}
+
+{% block content %}
+  <section class="panel" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Tracking detail</div>
+        <h1>{{ shipment.tracking_number }}</h1>
+        <p>A simple public view of the latest package status, destination, and delivery progress.</p>
+      </div>
+      <span class="status-chip {% if shipment.status == 'delivered' %}ok{% endif %}">{{ shipment.get_status_display }}</span>
+    </div>
+  </section>
+
+  <section class="callout" style="margin-bottom: 1rem;">
+    <div>
+      <strong>This page is meant for a quick answer.</strong>
+      <span class="muted">If the package belongs to your account, signing in gives you the full shipment workspace and any available redirect controls.</span>
+    </div>
+    <div class="callout-actions">
+      {% if request.user.is_authenticated %}
+        <a class="button button-primary" href="{% url 'ups:shipment-detail' shipment.tracking_number %}">Open shipment workspace</a>
+      {% else %}
+        <a class="button button-primary" href="{% url 'login' %}">Log in for account tools</a>
+      {% endif %}
+      <a class="button button-secondary" href="{% url 'ups:home' %}">Track another package</a>
+    </div>
+  </section>
+
+  <section class="section-grid two-up">
+    <article class="panel">
+      <h2>Status summary</h2>
+      <div class="label-list">
+        <div class="label-row"><strong>Package ID</strong><span>{{ shipment.package_id }}</span></div>
+        <div class="label-row"><strong>Destination</strong><span>({{ shipment.destination_x }}, {{ shipment.destination_y }})</span></div>
+        <div class="label-row"><strong>Truck</strong><span>{% if shipment.assigned_truck %}{{ shipment.assigned_truck.truck_id }}{% else %}<span class="muted">Pending assignment</span>{% endif %}</span></div>
+        <div class="label-row"><strong>Last update</strong><span>{{ shipment.updated_at }}</span></div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>What this status means</h2>
+      {% if shipment.status == "created" %}
+        <p class="muted">UPS has the shipment request and is preparing the package for warehouse handling.</p>
+      {% elif shipment.status == "loading" %}
+        <p class="muted">The package is being prepared and moved into the warehouse loading flow.</p>
+      {% elif shipment.status == "loaded" %}
+        <p class="muted">The package has been loaded and is waiting for the next truck movement.</p>
+      {% elif shipment.status == "out_for_delivery" %}
+        <p class="muted">The package is on the final truck route and redirect options are typically no longer available.</p>
+      {% elif shipment.status == "delivered" %}
+        <p class="muted">The package has reached the destination recorded in the UPS system.</p>
+      {% else %}
+        <p class="muted">This package is moving through the UPS workflow and will update as the next scan is recorded.</p>
+      {% endif %}
+      <div class="helper-note">Need more detail? Account-linked shipments show package contents and event history after sign-in.</div>
+    </article>
+  </section>
+{% endblock %}

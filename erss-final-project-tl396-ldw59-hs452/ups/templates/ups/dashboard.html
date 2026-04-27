@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="panel" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Operations</div>
+        <h1>Shipment dashboard</h1>
+        <p>A clearer account view of your current package activity, delivery state, and recent movement.</p>
+      </div>
+      <span class="status-chip">Account summary</span>
+    </div>
+  </section>
+
+  <section class="callout" style="margin-bottom: 1rem;">
+    <div>
+      <strong>Use this page as your package command center.</strong>
+      <span class="muted">Jump into shipment details to inspect items, review timeline events, and submit eligible redirects.</span>
+    </div>
+    <div class="callout-actions">
+      <a class="button button-primary" href="{% url 'ups:shipment-list' %}">Open all shipments</a>
+      <a class="button button-secondary" href="{% url 'ups:alerts-center' %}">View alerts</a>
+    </div>
+  </section>
+
+  <section class="section-grid three-up" style="margin-bottom: 1rem;">
+    <article class="metric-card">
+      <strong>{{ counts.total }}</strong>
+      <span>Total shipments</span>
+    </article>
+    <article class="metric-card">
+      <strong>{{ counts.pending }}</strong>
+      <span>Pending / warehouse flow</span>
+    </article>
+    <article class="metric-card">
+      <strong>{{ counts.out_for_delivery }}</strong>
+      <span>Out for delivery</span>
+    </article>
+    <article class="metric-card">
+      <strong>{{ counts.delivered }}</strong>
+      <span>Delivered</span>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Activity</div>
+        <h1 style="font-size:2rem; margin-bottom:0.35rem;">Recent shipments</h1>
+        <p class="muted">Your most recent package flow across warehouse, truck, and delivery stages.</p>
+      </div>
+    </div>
+    <div class="table-shell">
+      <table class="tracking-table">
+        <thead>
+          <tr>
+            <th>Tracking</th>
+            <th>Status</th>
+            <th>Truck</th>
+            <th>Destination</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for shipment in recent_shipments %}
+            <tr>
+              <td><a href="{% url 'ups:shipment-detail' shipment.tracking_number %}">{{ shipment.tracking_number }}</a></td>
+              <td><span class="status-chip {% if shipment.status == 'delivered' %}ok{% endif %}">{{ shipment.get_status_display }}</span></td>
+              <td>{% if shipment.assigned_truck %}{{ shipment.assigned_truck.truck_id }}{% else %}<span class="muted">Unassigned</span>{% endif %}</td>
+              <td>({{ shipment.destination_x }}, {{ shipment.destination_y }})</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="empty-state">No shipments yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

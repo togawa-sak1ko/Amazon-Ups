@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section.title }} | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="hero-shell">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">{{ section.eyebrow }}</div>
+        <h1>{{ section.title }}</h1>
+        <p>{{ section.subtitle }}</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="{% url 'ups:home' %}">Back to home</a>
+          {% if request.user.is_authenticated %}
+            <a class="button button-secondary" href="{% url 'ups:dashboard' %}">Open dashboard</a>
+          {% else %}
+            <a class="button button-secondary" href="{% url 'login' %}">Sign in</a>
+          {% endif %}
+        </div>
+      </div>
+      <aside class="hero-panel">
+        <div class="track-tabs">
+          {% for tab in section.tabs %}
+            <a href="#section-card-{{ forloop.counter }}"{% if forloop.first %} class="active"{% endif %}>{{ tab }}</a>
+          {% endfor %}
+        </div>
+        <div class="tracking-module">
+          <h2>{{ section.eyebrow }} tools</h2>
+          <p>These portal sections fill out the navigation structure so the site feels like a complete carrier experience.</p>
+          <ul class="quick-link-list" style="columns: 1; padding-left: 1rem;">
+            {% for link in section.links %}
+              <li>{{ link }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="quick-links">
+    {% for card in section.cards %}
+      <article class="quick-link" id="section-card-{{ forloop.counter }}">
+        <h3>{{ card.title }}</h3>
+        <p class="muted">{{ card.body }}</p>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="section-grid two-up">
+    <article class="panel">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">{{ section.eyebrow }} guide</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Service overview</h1>
+          <p>Carrier portals usually pair navigation destinations with guidance, action prompts, and supporting explanations.</p>
+        </div>
+      </div>
+      <div class="label-list">
+        {% for link in section.links %}
+          <div class="label-row">
+            <strong>{{ link }}</strong>
+            <span class="muted">This slot is ready for project-specific logic or additional account workflows.</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Next build steps</div>
+          <h1 style="font-size:2rem; margin-bottom:0.35rem;">Suggested expansion</h1>
+        </div>
+      </div>
+      <div class="news-list">
+        <div class="news-item">
+          <h3>Keep the shell consistent</h3>
+          <p class="muted">Each portal section now has the same carrier-style framing as the tracking homepage.</p>
+        </div>
+        <div class="news-item">
+          <h3>Add project-specific logic</h3>
+          <p class="muted">The visual shells are ready for quote logic, address tools, support workflows, or alert feeds.</p>
+        </div>
+        <div class="news-item">
+          <h3>Preserve the UPS-inspired feel</h3>
+          <p class="muted">Use dense cards, brown/gold hierarchy, utility nav, and structured content bands as you expand further.</p>
+        </div>
+      </div>
+    </article>
+  </section>
+{% endblock %}

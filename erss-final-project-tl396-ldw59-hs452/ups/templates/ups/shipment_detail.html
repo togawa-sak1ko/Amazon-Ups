@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ shipment.tracking_number }} | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="panel" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Shipment workspace</div>
+        <h1>{{ shipment.tracking_number }}</h1>
+        <p>
+          Package ID {{ shipment.package_id }}{% if shipment.owner_reference %} for {{ shipment.owner_reference }}{% endif %}.
+        </p>
+      </div>
+      <span class="status-chip {% if shipment.status == 'delivered' %}ok{% endif %}">{{ shipment.get_status_display }}</span>
+    </div>
+  </section>
+
+  <section class="callout" style="margin-bottom: 1rem;">
+    <div>
+      <strong>Everything for this package is on one page.</strong>
+      <span class="muted">Review route details, inspect contents, and update the destination if the shipment is still eligible.</span>
+    </div>
+    <div class="callout-actions">
+      <a class="button button-primary" href="{% url 'ups:shipment-list' %}">Back to shipment list</a>
+      {% if shipment.can_redirect %}
+        <a class="button button-secondary" href="#redirect-form">Jump to redirect</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="section-grid two-up">
+    <article class="panel">
+      <h2>Shipment details</h2>
+      <div class="label-list">
+        <div class="label-row"><strong>Warehouse</strong><span>{{ shipment.warehouse_id }}</span></div>
+        <div class="label-row"><strong>Truck</strong><span>{% if shipment.assigned_truck %}{{ shipment.assigned_truck.truck_id }}{% else %}<span class="muted">Unassigned</span>{% endif %}</span></div>
+        <div class="label-row"><strong>Destination</strong><span>({{ shipment.destination_x }}, {{ shipment.destination_y }})</span></div>
+        <div class="label-row"><strong>Amazon reference</strong><span>{{ shipment.amazon_order_reference|default:"-" }}</span></div>
+      </div>
+
+      <h3 style="margin-top: 1.4rem;">Package contents</h3>
+      <div class="table-shell">
+        <table class="tracking-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Description</th>
+              <th>Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in shipment.items.all %}
+              <tr>
+                <td>{{ item.sku|default:"-" }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.quantity }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" class="empty-state">No item details have been attached yet.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <aside class="section-grid">
+      <article class="panel" id="redirect-form">
+        <h2>Redirect shipment</h2>
+        {% if shipment.can_redirect %}
+          <p class="muted">Allowed until the package goes out for delivery.</p>
+          <form method="post" action="{% url 'ups:shipment-redirect' shipment.tracking_number %}" class="stack-form">
+            {% csrf_token %}
+            <div>
+              <label for="{{ form.destination_x.id_for_label }}">New X coordinate</label>
+              {{ form.destination_x }}
+            </div>
+            <div>
+              <label for="{{ form.destination_y.id_for_label }}">New Y coordinate</label>
+              {{ form.destination_y }}
+              <div class="helper-note">Submit changes before the package enters the out-for-delivery stage.</div>
+            </div>
+            <button class="button-gold" type="submit">Save redirect</button>
+          </form>
+        {% else %}
+          <p class="muted">This shipment is already out for delivery or completed.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <h2>Event timeline</h2>
+        <div class="timeline">
+          {% for event in shipment.events.all %}
+            <div class="timeline-item">
+              <strong>{{ event.event_type }}</strong>
+              <div>{{ event.message }}</div>
+              <div class="muted">{{ event.created_at }}</div>
+            </div>
+          {% empty %}
+            <div class="muted">No events recorded yet.</div>
+          {% endfor %}
+        </div>
+      </article>
+    </aside>
+  </section>
+{% endblock %}

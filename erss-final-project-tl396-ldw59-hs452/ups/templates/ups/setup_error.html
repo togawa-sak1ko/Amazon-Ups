@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Required | Mini-UPS{% endblock %}
+
+{% block content %}
+  <section class="panel" style="margin-bottom: 1rem;">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Setup required</div>
+        <h1>Mini-UPS is not fully initialized yet</h1>
+        <p>
+          The app started, but Django could not use the configured database. This usually means migrations
+          have not been run yet, or the database connection settings are missing or incorrect.
+        </p>
+      </div>
+      <span class="status-chip">Service unavailable</span>
+    </div>
+  </section>
+
+  <section class="section-grid two-up">
+    <article class="panel">
+      <h2>Recommended fix</h2>
+      <p>From the project root, run:</p>
+      <pre style="overflow:auto; background:#fffdf7; border:1px solid var(--line); border-radius:0.85rem; padding:1rem;"><code>python3 manage.py migrate
+python3 manage.py runserver</code></pre>
+      <p>If you are using Docker, run:</p>
+      <pre style="overflow:auto; background:#fffdf7; border:1px solid var(--line); border-radius:0.85rem; padding:1rem;"><code>docker-compose up --build</code></pre>
+    </article>
+
+    <article class="panel">
+      <h2>Detected database error</h2>
+      <p class="muted">{{ error_message }}</p>
+    </article>
+  </section>
+{% endblock %}

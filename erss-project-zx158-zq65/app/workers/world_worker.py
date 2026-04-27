@@ -35,7 +35,11 @@ class FulfillmentWorker:
         try:
             self.world.sync_once(db)
         except Exception:
-            logger.exception("world sync failed; continuing with HTTP integration work")
+            logger.exception(
+                "world sync failed against %s:%s; continuing with HTTP integration work",
+                self.world.settings.world_host,
+                self.world.settings.world_port,
+            )
 
     def run_once(self) -> None:
         with SessionLocal() as db:

@@ -157,6 +157,25 @@ done
 
 if [[ -z "$WORLD_ID" ]]; then
   echo "ERROR: Amazon did not publish a world_id in /healthz."
+  echo
+  echo "Amazon /healthz:"
+  curl -i "http://127.0.0.1:${AMAZON_HTTP_PORT}/healthz" || true
+  echo
+  echo "Amazon container status:"
+  cd "$AMAZON_DIR"
+  compose ps || true
+  echo
+  echo "Amazon worker logs:"
+  compose logs --tail 180 worker || true
+  echo
+  echo "Amazon web logs:"
+  compose logs --tail 80 web || true
+  if [[ "$USE_VM_WORLD" != "1" ]]; then
+    echo
+    echo "World simulator logs:"
+    cd "$WORLD_DIR"
+    compose logs --tail 120 server || true
+  fi
   exit 1
 fi
 

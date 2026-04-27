@@ -2,3 +2,4 @@
 FROM yunjingliu/world_sim:base
 ADD . /worldsim
 WORKDIR /worldsim
+RUN chmod +x ./wait-for-it.sh ./server

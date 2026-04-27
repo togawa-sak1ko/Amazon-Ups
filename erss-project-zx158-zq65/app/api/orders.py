@@ -9,9 +9,11 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.schemas.order import OrderCreate
+from app.schemas.order import OrderCreate, OrderView
 from app.schemas.ups_api import RedirectRequest
 from app.integrations.ups_client import UPSClient, UPSClientError
+from app.services.auth_service import current_customer
+from app.services.cart_service import cart_item_count
 from app.services.catalog_service import list_catalog
 from app.services.order_service import (
     count_orders_by_status,
@@ -49,6 +51,18 @@ STATUS_LABELS = {
     "failed": "Needs attention",
 }
 
+STATUS_DESCRIPTIONS = {
+    "created": "Amazon accepted the customer order and created a package id.",
+    "pickup_requested": "Amazon requested a UPS truck for this warehouse pickup.",
+    "packing_requested": "Inventory has been requested from the simulated world.",
+    "packed": "The package is packed and ready for truck arrival.",
+    "truck_arrived": "UPS has arrived at the warehouse.",
+    "loading_requested": "Amazon asked the world to load the package onto the truck.",
+    "loaded": "The package is physically loaded in the world simulator.",
+    "out_for_delivery": "UPS has been notified that delivery can begin.",
+    "delivered": "UPS confirmed final delivery to the destination.",
+}
+
 
 def _status_index(status: str) -> int:
     if status == "failed":
@@ -67,11 +81,37 @@ def _status_percent(status: str) -> int:
     return max(12, int((_status_index(status) / (len(STATUS_FLOW) - 1)) * 100))
 
 
+def _decorate_order(order: OrderView) -> dict[str, object]:
+    data = order.model_dump()
+    data["status_label"] = STATUS_LABELS.get(data["status"], data["status"])
+    return data
+
+
+def _timeline_for(status: str) -> list[dict[str, object]]:
+    current_step = _status_index(status)
+    return [
+        {
+            "key": step,
+            "label": STATUS_LABELS.get(step, step),
+            "description": STATUS_DESCRIPTIONS[step],
+            "complete": status != "failed" and index <= current_step,
+            "failed": status == "failed" and index == 0,
+        }
+        for index, step in enumerate(STATUS_FLOW)
+    ]
+
+
 @router.get("/", response_class=HTMLResponse)
-def order_form(request: Request, q: Optional[str] = None, db: Session = Depends(get_db)) -> HTMLResponse:
+def order_form(
+    request: Request,
+    q: Optional[str] = None,
+    message: Optional[str] = None,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
     catalog = list_catalog(db, q)
     recent_orders = list_recent_orders(db)
     status_counts = count_orders_by_status(db)
+    customer = current_customer(request, db)
     active_orders = sum(
         count
         for status, count in status_counts.items()
@@ -83,12 +123,14 @@ def order_form(request: Request, q: Optional[str] = None, db: Session = Depends(
         {
             "catalog": catalog,
             "search": q or "",
-            "recent_orders": recent_orders,
+            "recent_orders": [_decorate_order(order) for order in recent_orders],
             "status_counts": status_counts,
             "total_orders": sum(status_counts.values()),
             "active_orders": active_orders,
             "delivered_orders": status_counts.get("delivered", 0),
-            "status_labels": STATUS_LABELS,
+            "current_user": customer,
+            "cart_count": cart_item_count(db, customer.id if customer else None),
+            "message": message,
         },
     )
 
@@ -122,17 +164,26 @@ def order_detail(
 ) -> HTMLResponse:
     order = get_order(db, order_id)
     if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
+        return templates.TemplateResponse(
+            request,
+            "order_missing.html",
+            {
+                "order_id": order_id,
+                "message": "That order was not found. If you just checked out, return to the storefront and try the recent orders list.",
+            },
+            status_code=404,
+        )
+    customer = current_customer(request, db)
     return templates.TemplateResponse(
         request,
         "order_detail.html",
         {
-            "order": order,
+            "order": _decorate_order(order),
             "message": message,
-            "status_steps": STATUS_FLOW,
-            "status_labels": STATUS_LABELS,
-            "current_step": _status_index(order.status),
+            "timeline": _timeline_for(order.status),
             "status_percent": _status_percent(order.status),
+            "current_user": customer,
+            "cart_count": cart_item_count(db, customer.id if customer else None),
         },
     )
 

@@ -2,6 +2,8 @@ from sqlalchemy import select, text
 
 from app.config import get_settings
 from app.db import Base, SessionLocal, engine
+from app.models.cart import CartItem
+from app.models.customer import Customer
 from app.models.order import Order
 from app.models.shipment import Shipment
 from app.models.system_state import PackageCounter, RuntimeState
@@ -11,7 +13,7 @@ from app.models.warehouse import InventoryItem
 
 def bootstrap() -> None:
     settings = get_settings()
-    _ = (Order, Shipment, InventoryItem, PackageCounter, RuntimeState)
+    _ = (CartItem, Customer, Order, Shipment, InventoryItem, PackageCounter, RuntimeState)
     with engine.begin() as conn:
         conn.execute(text("SELECT pg_advisory_lock(104729)"))
         try:

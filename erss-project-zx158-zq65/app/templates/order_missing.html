@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Order not found | Mini Amazon</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="topbar">
+        <a class="brand" href="/" aria-label="Mini Amazon home">
+          <span class="brand-name">amazon</span><span class="brand-smile"></span>
+        </a>
+        <div class="order-search-copy">
+          <strong>Order #{{ order_id }}</strong>
+          <span>Not found</span>
+        </div>
+        <a class="header-link" href="/">Return to storefront</a>
+      </div>
+    </header>
+    <main>
+      <section class="empty-state missing-order">
+        <h1>We could not find that order.</h1>
+        <p>{{ message }}</p>
+        <a class="button button-primary" href="/">Back to Mini Amazon</a>
+      </section>
+    </main>
+  </body>
+</html>

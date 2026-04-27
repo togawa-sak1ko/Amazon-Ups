@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cart | Mini Amazon</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="topbar">
+        <a class="brand" href="/" aria-label="Mini Amazon home">
+          <span class="brand-name">amazon</span><span class="brand-smile"></span>
+        </a>
+        <div class="order-search-copy">
+          <strong>Shopping Cart</strong>
+          <span>{{ cart_count }} item{{ "" if cart_count == 1 else "s" }}</span>
+        </div>
+        <div class="account-box">
+          <span>Hello, {{ current_user.display_name }}</span>
+          <form method="post" action="/logout">
+            <button type="submit">Sign out</button>
+          </form>
+          <a class="header-link" href="/">Continue shopping</a>
+        </div>
+      </div>
+      <nav class="nav-strip" aria-label="Cart sections">
+        <a href="/">Storefront</a>
+        <a href="#items">Items</a>
+        <a href="#cart-checkout">Checkout</a>
+        <span>Cart checkout creates real project orders</span>
+      </nav>
+    </header>
+
+    <main>
+      {% if message %}
+        <p class="flash">{{ message }}</p>
+      {% endif %}
+      <section class="cart-grid">
+        <div class="cart-items" id="items">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Cart</p>
+              <h1>Shopping Cart</h1>
+            </div>
+          </div>
+          {% for item in cart_items %}
+            <article class="cart-item">
+              <div class="product-art product-art-{{ loop.index0 % 5 }}" aria-hidden="true">
+                <span>{{ item.product_name[:2] }}</span>
+              </div>
+              <div>
+                <h2>{{ item.product_name }}</h2>
+                <p class="muted">Eligible for simulated UPS pickup after checkout.</p>
+                <strong class="cart-price">${{ 19 + loop.index0 * 12 }}.99</strong>
+                <p>Quantity: {{ item.quantity }}</p>
+                <form method="post" action="/cart/items/{{ item.id }}/delete">
+                  <button class="link-button" type="submit">Delete</button>
+                </form>
+              </div>
+            </article>
+          {% else %}
+            <section class="empty-state">
+              <h3>Your cart is empty.</h3>
+              <p>Add products from the storefront, then checkout will create real Amazon orders.</p>
+            </section>
+          {% endfor %}
+        </div>
+
+        <aside class="checkout-panel" id="cart-checkout">
+          <div class="panel-heading">
+            <p class="eyebrow">Checkout</p>
+            <h2>Place cart order</h2>
+          </div>
+          <p class="muted">All cart items will be submitted as real project orders with the same destination.</p>
+          <form method="post" action="/cart/checkout" class="order-form">
+            <div class="coordinate-grid">
+              <label>
+                <span>Destination X</span>
+                <input type="number" name="dest_x" value="5" required>
+              </label>
+              <label>
+                <span>Destination Y</span>
+                <input type="number" name="dest_y" value="8" required>
+              </label>
+            </div>
+            <label>
+              <span>UPS Username</span>
+              <input type="text" name="ups_username" value="{{ current_user.email }}">
+            </label>
+            <button class="checkout-button" type="submit" {% if not cart_items %}disabled{% endif %}>Proceed to checkout</button>
+          </form>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

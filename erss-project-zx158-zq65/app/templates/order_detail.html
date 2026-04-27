@@ -16,13 +16,24 @@
           <strong>Order #{{ order.order_id }}</strong>
           <span>Package {{ order.package_id }}</span>
         </div>
-        <a class="header-link" href="/">Return to storefront</a>
+        <div class="account-box">
+          {% if current_user %}
+            <span>Hello, {{ current_user.display_name }}</span>
+            <form method="post" action="/logout">
+              <button type="submit">Sign out</button>
+            </form>
+          {% else %}
+            <a href="/login">Sign in</a>
+          {% endif %}
+          <a class="cart-link" href="/cart">Cart <strong>{{ cart_count }}</strong></a>
+          <a class="header-link" href="/">Storefront</a>
+        </div>
       </div>
       <nav class="nav-strip" aria-label="Order sections">
         <a href="#summary">Summary</a>
         <a href="#timeline">Timeline</a>
         <a href="#redirect">Redirect</a>
-        <span>{{ status_labels.get(order.status, order.status) }}</span>
+        <span>{{ order.status_label }}</span>
       </nav>
     </header>
 
@@ -40,7 +51,7 @@
           {% endif %}
           <div class="status-panel status-panel-{{ order.status }}">
             <div class="status-line">
-              <span>{{ status_labels.get(order.status, order.status) }}</span>
+              <span>{{ order.status_label }}</span>
               <strong>{{ status_percent }}%</strong>
             </div>
             <div class="progress-track" aria-label="Order progress">
@@ -71,32 +82,12 @@
             </div>
           </div>
           <ol class="timeline">
-            {% for step in status_steps %}
-              <li class="{% if order.status == 'failed' and loop.index0 == 0 %}is-failed{% elif loop.index0 <= current_step %}is-complete{% endif %}">
+            {% for step in timeline %}
+              <li class="{% if step.failed %}is-failed{% elif step.complete %}is-complete{% endif %}">
                 <span></span>
                 <div>
-                  <strong>{{ status_labels.get(step, step) }}</strong>
-                  <p>
-                    {% if step == "created" %}
-                      Amazon accepted the customer order and created a package id.
-                    {% elif step == "pickup_requested" %}
-                      Amazon requested a UPS truck for this warehouse pickup.
-                    {% elif step == "packing_requested" %}
-                      Inventory has been requested from the simulated world.
-                    {% elif step == "packed" %}
-                      The package is packed and ready for truck arrival.
-                    {% elif step == "truck_arrived" %}
-                      UPS has arrived at Warehouse {{ order.warehouse_id }}.
-                    {% elif step == "loading_requested" %}
-                      Amazon asked the world to load the package onto the truck.
-                    {% elif step == "loaded" %}
-                      The package is physically loaded in the world simulator.
-                    {% elif step == "out_for_delivery" %}
-                      UPS has been notified that delivery can begin.
-                    {% else %}
-                      UPS confirmed final delivery to the destination.
-                    {% endif %}
-                  </p>
+                  <strong>{{ step.label }}</strong>
+                  <p>{{ step.description }}</p>
                 </div>
               </li>
             {% endfor %}
@@ -119,7 +110,7 @@
           <dl class="info-list">
             <div><dt>Current destination</dt><dd>({{ order.dest_x }}, {{ order.dest_y }})</dd></div>
             <div><dt>Quantity</dt><dd>{{ order.quantity }}</dd></div>
-            <div><dt>Status</dt><dd>{{ status_labels.get(order.status, order.status) }}</dd></div>
+            <div><dt>Status</dt><dd>{{ order.status_label }}</dd></div>
           </dl>
 
           {% if order.status != "delivered" and order.status != "failed" %}

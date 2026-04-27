@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     app_name: str = "team1c-amazon"
     app_host: str = "0.0.0.0"
     app_port: int = 8080
+    session_secret: str = "dev-mini-amazon-session-secret"
 
     database_url: str = "postgresql+psycopg://postgres:postgres@db:5432/amazon"
     sync_database_url: str = "postgresql+psycopg://postgres:postgres@db:5432/amazon"

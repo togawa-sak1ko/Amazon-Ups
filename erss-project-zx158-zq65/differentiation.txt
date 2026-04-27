@@ -6,3 +6,4 @@ Team 1c Amazon Differentiation
 4. Destination redirect flow from the Amazon side, including UPS redirect forwarding after pickup has been scheduled.
 5. Persistent shipment state machine that records intermediate fulfillment milestones and terminal failures for debugging.
 6. Amazon-inspired storefront UI with product selection, checkout, fulfillment metrics, recent orders, and a detailed tracking timeline.
+7. Account registration/login and persistent shopping cart checkout that creates real Amazon orders using the existing fulfillment pipeline.

@@ -28,6 +28,18 @@
             <button type="submit">Go</button>
           </div>
         </form>
+        <div class="account-box">
+          {% if current_user %}
+            <span>Hello, {{ current_user.display_name }}</span>
+            <form method="post" action="/logout">
+              <button type="submit">Sign out</button>
+            </form>
+          {% else %}
+            <a href="/login">Hello, sign in</a>
+            <a href="/register">Create account</a>
+          {% endif %}
+          <a class="cart-link" href="/cart">Cart <strong>{{ cart_count }}</strong></a>
+        </div>
       </div>
       <nav class="nav-strip" aria-label="Primary">
         <a href="#catalog">Today's picks</a>
@@ -39,6 +51,9 @@
     </header>
 
     <main>
+      {% if message %}
+        <p class="flash">{{ message }}</p>
+      {% endif %}
       <section class="storefront">
         <div class="storefront-copy">
           <p class="eyebrow">ERSS Team 1c Mini Amazon</p>
@@ -105,7 +120,14 @@
                     <span>{{ item.quantity }} in stock</span>
                   </div>
                 </div>
-                <button class="select-product" type="button" data-product="{{ item.product_name }}">Add to checkout</button>
+                <div class="product-actions">
+                  <form method="post" action="/cart/items">
+                    <input type="hidden" name="product_name" value="{{ item.product_name }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button class="select-product" type="submit">Add to Cart</button>
+                  </form>
+                  <button class="buy-now" type="button" data-product="{{ item.product_name }}">Buy now</button>
+                </div>
               </article>
             {% else %}
               <div class="empty-state">
@@ -142,7 +164,7 @@
             </div>
             <label>
               <span>UPS Username</span>
-              <input type="text" name="ups_username" placeholder="Optional account link">
+              <input type="text" name="ups_username" value="{{ current_user.email if current_user else '' }}" placeholder="Optional account link">
             </label>
             <button type="submit" class="checkout-button">Place your order</button>
           </form>
@@ -182,7 +204,7 @@
                   <td><a href="/orders/{{ order.order_id }}">#{{ order.order_id }}</a></td>
                   <td>{{ order.package_id }}</td>
                   <td>{{ order.product_name }}</td>
-                  <td><span class="status-pill status-{{ order.status }}">{{ status_labels.get(order.status, order.status) }}</span></td>
+                  <td><span class="status-pill status-{{ order.status }}">{{ order.status_label }}</span></td>
                   <td>({{ order.dest_x }}, {{ order.dest_y }})</td>
                 </tr>
               {% else %}

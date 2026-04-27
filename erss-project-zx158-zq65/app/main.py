@@ -2,8 +2,11 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.auth import router as auth_router
+from app.api.cart import router as cart_router
 from app.api.health import router as health_router
 from app.api.orders import router as orders_router
 from app.api.tracking import router as tracking_router
@@ -13,6 +16,12 @@ from app.config import get_settings
 settings = get_settings()
 
 app = FastAPI(title=settings.app_name)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.session_secret,
+    same_site="lax",
+    https_only=False,
+)
 
 
 @app.exception_handler(RequestValidationError)
@@ -27,6 +36,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
 
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.include_router(auth_router)
+app.include_router(cart_router)
 app.include_router(health_router)
 app.include_router(orders_router)
 app.include_router(tracking_router)
